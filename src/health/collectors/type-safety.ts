@@ -76,10 +76,14 @@ export const typeSafetyCollector: Collector = {
           const line = lines[i]
           // Skip comment lines
           if (/^\s*\/\//.test(line) || /^\s*\*/.test(line)) continue
-          // Remove inline comments before matching
+          // Remove inline comments and string literals before matching
           const noComments = line.replace(/\/\/.*$/, '').replace(/\/\*.*?\*\//g, '')
-          // Match explicit `any` type annotations
-          const matches = noComments.match(/\bany\b/g)
+          const noStrings = noComments
+            .replace(/"(?:[^"\\]|\\.)*"/g, '""')
+            .replace(/'(?:[^'\\]|\\.)*'/g, "''")
+            .replace(/`(?:[^`\\]|\\.)*`/g, '``')
+          // Match `any` only in type positions: `: any`, `<any>`, `as any`, `any[]`, `any,`, `any)`
+          const matches = noStrings.match(/(?::|\bas\b|<|,|\||\&)\s*any\b|any\s*[>\[\],\);\|&]/g)
           if (matches) {
             for (const _ of matches) {
               anyCount++
