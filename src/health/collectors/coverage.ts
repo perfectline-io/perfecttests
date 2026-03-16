@@ -73,10 +73,21 @@ export const coverageCollector: Collector = {
       lines * 0.4 + branches * 0.3 + functions * 0.2 + statements * 0.1,
     )
 
+    // Files that are pure types/schemas/re-exports — no runtime logic to test
+    const COVERAGE_IGNORE = [
+      /\/types\.ts$/,
+      /\/types\/.*\.ts$/,
+      /\/schema\.ts$/,
+      /\/index\.ts$/,
+    ]
+
     // Flag files with low or zero coverage
     for (const [filePath, data] of Object.entries(summary)) {
       if (filePath === 'total') continue
       const relPath = filePath.replace(servicePath + '/', '')
+
+      // Skip type-only, schema, and barrel export files
+      if (COVERAGE_IGNORE.some((re) => re.test(relPath))) continue
       const linePct = data.lines.pct
 
       if (linePct === 0) {

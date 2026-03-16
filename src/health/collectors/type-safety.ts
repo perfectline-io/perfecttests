@@ -83,7 +83,8 @@ export const typeSafetyCollector: Collector = {
             .replace(/'(?:[^'\\]|\\.)*'/g, "''")
             .replace(/`(?:[^`\\]|\\.)*`/g, '``')
           // Match `any` only in type positions: `: any`, `<any>`, `as any`, `any[]`, `any,`, `any)`
-          const matches = noStrings.match(/(?::|\bas\b|<|,|\||\&)\s*any\b|any\s*[>\[\],\);\|&]/g)
+          // \b ensures we don't match words containing "any" like "Company" or "many"
+          const matches = noStrings.match(/(?::|\bas\b|<|,|\||\&)\s*\bany\b|\bany\b\s*[>\[\],\);\|&]/g)
           if (matches) {
             for (const _ of matches) {
               anyCount++
@@ -115,11 +116,36 @@ export const typeSafetyCollector: Collector = {
         `${servicePath}/tsconfig.json`,
         'utf-8',
       )
-      // Strip comments for JSON parsing
-      const stripped = tsconfigRaw.replace(
-        /\/\*[\s\S]*?\*\/|\/\/.*/g,
-        '',
-      )
+      // Strip JSON comments while preserving string contents
+      // Process character by character to avoid corrupting strings containing //
+      let stripped = ''
+      let inString = false
+      let inLineComment = false
+      let inBlockComment = false
+      for (let j = 0; j < tsconfigRaw.length; j++) {
+        const ch = tsconfigRaw[j]
+        const next = tsconfigRaw[j + 1]
+
+        if (inLineComment) {
+          if (ch === '\n') { inLineComment = false; stripped += ch }
+          continue
+        }
+        if (inBlockComment) {
+          if (ch === '*' && next === '/') { inBlockComment = false; j++ }
+          continue
+        }
+        if (inString) {
+          stripped += ch
+          if (ch === '\\') { stripped += next ?? ''; j++ }
+          else if (ch === '"') { inString = false }
+          continue
+        }
+
+        if (ch === '"') { inString = true; stripped += ch; continue }
+        if (ch === '/' && next === '/') { inLineComment = true; continue }
+        if (ch === '/' && next === '*') { inBlockComment = true; j++; continue }
+        stripped += ch
+      }
       const tsconfig = JSON.parse(stripped)
       const compilerOptions = tsconfig.compilerOptions ?? {}
 
