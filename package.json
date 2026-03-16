@@ -9,7 +9,7 @@
     "src/"
   ],
   "scripts": {
-    "build": "bunx tsc -p tsconfig.build.json",
+    "build": "bunx tsc -p tsconfig.build.json && cp -r src/health/templates dist/health/templates",
     "typecheck": "bunx tsc --noEmit"
   },
   "exports": {
