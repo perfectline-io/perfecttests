@@ -1,5 +1,5 @@
 import { exec } from 'child_process'
-import { readFile } from 'fs/promises'
+import { readFile, rm } from 'fs/promises'
 import { promisify } from 'util'
 import type { Collector, CollectorResult, HealthIssue } from '../../types'
 
@@ -27,6 +27,13 @@ export const coverageCollector: Collector = {
     const coveragePath = `${servicePath}/coverage/coverage-summary.json`
 
     let summary: CoverageSummary | null = null
+
+    // Delete stale coverage data before running fresh tests
+    try {
+      await rm(`${servicePath}/coverage`, { recursive: true, force: true })
+    } catch {
+      // Ignore if directory doesn't exist
+    }
 
     // Always run test:coverage to get fresh data
     try {
