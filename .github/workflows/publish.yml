@@ -31,6 +31,9 @@ jobs:
       - name: Typecheck
         run: bunx tsc --noEmit
 
+      - name: Build
+        run: bun run build
+
       - name: Configure git
         run: |
           git config user.name "github-actions[bot]"

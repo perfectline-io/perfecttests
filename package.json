@@ -6,24 +6,29 @@
     "registry": "https://npm.pkg.github.com"
   },
   "files": [
+    "dist/",
     "src/"
   ],
+  "scripts": {
+    "build": "bunx tsc -p tsconfig.build.json",
+    "typecheck": "bunx tsc --noEmit"
+  },
   "exports": {
-    ".": "./src/index.ts",
-    "./jest": "./src/jest/config.ts",
-    "./jest/setup": "./src/jest/setup.ts",
-    "./playwright": "./src/playwright/config.ts",
-    "./playwright/fixtures": "./src/playwright/fixtures.ts",
-    "./playwright/setup": "./src/playwright/global-setup.ts",
-    "./mocks": "./src/mocks/index.ts",
-    "./mocks/session": "./src/mocks/session.ts",
-    "./mocks/platform": "./src/mocks/platform.ts",
-    "./mocks/next-request": "./src/mocks/next-request.ts",
-    "./helpers": "./src/helpers/index.ts",
-    "./helpers/auth": "./src/helpers/auth.ts",
-    "./helpers/db": "./src/helpers/db.ts",
-    "./health": "./src/health/index.ts",
-    "./health/collectors": "./src/health/collectors/index.ts"
+    ".": "./dist/index.js",
+    "./jest": "./dist/jest/config.js",
+    "./jest/setup": "./dist/jest/setup.js",
+    "./playwright": "./dist/playwright/config.js",
+    "./playwright/fixtures": "./dist/playwright/fixtures.js",
+    "./playwright/setup": "./dist/playwright/global-setup.js",
+    "./mocks": "./dist/mocks/index.js",
+    "./mocks/session": "./dist/mocks/session.js",
+    "./mocks/platform": "./dist/mocks/platform.js",
+    "./mocks/next-request": "./dist/mocks/next-request.js",
+    "./helpers": "./dist/helpers/index.js",
+    "./helpers/auth": "./dist/helpers/auth.js",
+    "./helpers/db": "./dist/helpers/db.js",
+    "./health": "./dist/health/index.js",
+    "./health/collectors": "./dist/health/collectors/index.js"
   },
   "peerDependencies": {
     "@testing-library/jest-dom": ">=6.0.0",
@@ -50,6 +55,7 @@
     "@types/jest": "^30.0.0",
     "drizzle-orm": "^0.45.1",
     "jest": "^30.3.0",
+    "next": "^16.1.6",
     "next-auth": "^4.24.13",
     "typescript": "^5.7.0"
   },
