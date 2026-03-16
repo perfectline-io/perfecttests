@@ -28,19 +28,23 @@ export const coverageCollector: Collector = {
 
     let summary: CoverageSummary | null = null
 
-    // Try reading existing coverage data
+    // Always run test:coverage to get fresh data
     try {
+      await execAsync('bun run test:coverage --ci 2>&1', {
+        cwd: servicePath,
+        timeout: 120_000,
+      })
       const raw = await readFile(coveragePath, 'utf-8')
       summary = JSON.parse(raw) as CoverageSummary
     } catch {
-      // Try running test:coverage
+      // Fall back to reading existing coverage data
       try {
-        await execAsync('bun run test:coverage --ci 2>&1', {
-          cwd: servicePath,
-          timeout: 120_000,
-        })
         const raw = await readFile(coveragePath, 'utf-8')
         summary = JSON.parse(raw) as CoverageSummary
+        issues.push({
+          severity: 'info',
+          message: 'Using cached coverage data (test:coverage failed or not available)',
+        })
       } catch {
         issues.push({
           severity: 'warning',
