@@ -6,7 +6,7 @@ export async function generateHtmlReport(
   services: ServiceHealth[],
   outputDir: string,
 ): Promise<string> {
-  const templatePath = join(import.meta.dirname ?? __dirname, '../templates/report.html')
+  const templatePath = join(__dirname, '../templates/report.html')
   const template = await readFile(templatePath, 'utf8')
 
   const snapshots = await loadSnapshots(join(outputDir, 'snapshots'))

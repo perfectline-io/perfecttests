@@ -2,8 +2,8 @@
   "compilerOptions": {
     "strict": true,
     "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "module": "CommonJS",
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "declaration": true,
