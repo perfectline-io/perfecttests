@@ -56,6 +56,7 @@ export function createJestConfig(options: JestConfigOptions = {}) {
       '<rootDir>/.next/',
     ],
     collectCoverageFrom: coverageFrom ?? defaultCoverageFrom,
+    coverageReporters: ['json-summary', 'text', 'lcov'],
     ...(coverageLevel ? { coverageThreshold: coverageThresholds[coverageLevel] } : {}),
     ...rest,
   }
