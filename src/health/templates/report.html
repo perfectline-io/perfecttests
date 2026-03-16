@@ -3,108 +3,303 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PerfectLine Code Health Report</title>
+<title>PerfectLine — Code Health</title>
 <!-- __HEALTH_DATA__ -->
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
 :root{
-  --bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--border:#2a2a2a;
-  --text:#e5e5e5;--text2:#a0a0a0;--text3:#666;
-  --green:#22c55e;--yellow:#eab308;--red:#ef4444;--blue:#3b82f6;--cyan:#06b6d4;
-  --radius:8px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-}
-.light{
-  --bg:#fafafa;--surface:#fff;--surface2:#f5f5f5;--border:#e5e5e5;
-  --text:#171717;--text2:#525252;--text3:#a0a0a0;
-}
-body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.5;padding:2rem}
-.container{max-width:1200px;margin:0 auto}
-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem}
-h1{font-size:1.5rem;font-weight:600}
-h2{font-size:1.125rem;font-weight:600;margin-bottom:1rem}
-h3{font-size:1rem;font-weight:600;margin-bottom:.5rem}
-.meta{color:var(--text2);font-size:.875rem}
-button{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.375rem .75rem;
-  border-radius:var(--radius);cursor:pointer;font-size:.8125rem}
-button:hover{border-color:var(--text3)}
-button.active{border-color:var(--blue);color:var(--blue)}
+  --bg:         oklch(0.985 0.002 250);
+  --fg:         oklch(0.12 0.005 250);
+  --card:       oklch(0.995 0.001 250);
+  --card-fg:    oklch(0.12 0.005 250);
+  --secondary:  oklch(0.955 0.003 250);
+  --muted:      oklch(0.955 0.003 250);
+  --muted-fg:   oklch(0.45 0.008 250);
+  --border:     oklch(0.91 0.003 250);
+  --input:      oklch(0.91 0.003 250);
+  --accent-warm:oklch(0.48 0.14 280);
 
-/* Summary Table */
-.summary-table{width:100%;border-collapse:collapse;margin-bottom:2rem}
-.summary-table th,.summary-table td{padding:.625rem .75rem;text-align:left;border-bottom:1px solid var(--border)}
-.summary-table th{color:var(--text2);font-weight:500;font-size:.8125rem;text-transform:uppercase;letter-spacing:.05em}
-.summary-table tr{cursor:pointer;transition:background .15s}
-.summary-table tr:hover{background:var(--surface2)}
-.grade{font-weight:700;font-size:1rem}
-.grade-a{color:var(--green)}.grade-b{color:var(--green)}.grade-c{color:var(--yellow)}.grade-d{color:var(--red)}.grade-f{color:var(--red)}
-.score-bar{display:flex;align-items:center;gap:.5rem}
-.score-bar-track{width:80px;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
-.score-bar-fill{height:100%;border-radius:3px;transition:width .3s}
-.score-val{font-size:.8125rem;color:var(--text2);min-width:1.5rem}
+  --success:    oklch(0.48 0.15 152);
+  --warning:    oklch(0.52 0.15 85);
+  --info:       oklch(0.45 0.18 258);
+  --error:      oklch(0.50 0.18 25);
 
-/* Service Detail */
-.detail{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem}
+  --shadow-xs:  0 1px 2px 0 oklch(0 0 0 / 0.05);
+  --shadow-sm:  0 2px 8px -2px oklch(0 0 0 / 0.08);
+  --shadow-md:  0 8px 24px -6px oklch(0 0 0 / 0.1);
+
+  --radius:     0.5rem;
+  --font-body:  'Outfit', system-ui, sans-serif;
+  --font-display:'Space Grotesk', system-ui, sans-serif;
+}
+
+.dark{
+  --bg:         oklch(0.12 0.005 250);
+  --fg:         oklch(0.93 0.003 250);
+  --card:       oklch(0.16 0.005 250);
+  --card-fg:    oklch(0.93 0.003 250);
+  --secondary:  oklch(0.20 0.005 250);
+  --muted:      oklch(0.18 0.005 250);
+  --muted-fg:   oklch(0.60 0.006 250);
+  --border:     oklch(0.24 0.005 250);
+  --input:      oklch(0.20 0.005 250);
+  --accent-warm:oklch(0.68 0.14 280);
+
+  --success:    oklch(0.72 0.18 152);
+  --warning:    oklch(0.78 0.16 87);
+  --info:       oklch(0.65 0.18 258);
+  --error:      oklch(0.68 0.18 25);
+
+  --shadow-xs:  0 1px 2px 0 oklch(0 0 0 / 0.15);
+  --shadow-sm:  0 2px 8px -2px oklch(0 0 0 / 0.25);
+  --shadow-md:  0 8px 24px -6px oklch(0 0 0 / 0.3);
+}
+
+body{
+  font-family:var(--font-body);
+  background:var(--bg);
+  color:var(--fg);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:999px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted-fg)}
+
+/* ── Layout ── */
+.container{max-width:1200px;margin:0 auto;padding:2rem 1.5rem}
+@media(min-width:640px){.container{padding:2.5rem 2rem}}
+
+/* ── Header ── */
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:2.5rem;flex-wrap:wrap}
+header .brand{display:flex;flex-direction:column;gap:0.25rem}
+.brand h1{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:1.5rem;
+  letter-spacing:-0.035em;
+  line-height:1.2;
+}
+.brand h1 span{color:var(--accent-warm)}
+.meta{color:var(--muted-fg);font-size:0.8125rem;font-weight:400}
+.header-actions{display:flex;gap:0.5rem;flex-shrink:0}
+
+/* ── Buttons ── */
+.btn{
+  display:inline-flex;align-items:center;gap:0.375rem;
+  font-family:var(--font-body);font-size:0.8125rem;font-weight:500;
+  padding:0.4375rem 0.875rem;
+  background:var(--card);border:1px solid var(--border);color:var(--fg);
+  border-radius:var(--radius);cursor:pointer;
+  transition:border-color 150ms,box-shadow 150ms,background 150ms;
+  box-shadow:var(--shadow-xs);
+}
+.btn:hover{border-color:var(--muted-fg);box-shadow:var(--shadow-sm)}
+.btn.active{border-color:var(--accent-warm);color:var(--accent-warm)}
+
+/* ── Stat strip ── */
+.stat-strip{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:0.75rem;margin-bottom:2rem;
+}
+.stat-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1rem 1.25rem;box-shadow:var(--shadow-xs);
+  transition:box-shadow 250ms,border-color 250ms;
+}
+.stat-card:hover{box-shadow:var(--shadow-sm)}
+.stat-label{font-size:0.6875rem;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted-fg);margin-bottom:0.25rem}
+.stat-value{font-family:var(--font-display);font-weight:700;font-size:1.75rem;letter-spacing:-0.035em;line-height:1.1}
+
+/* ── Service table ── */
+.table-wrap{
+  background:var(--card);border:1px solid var(--border);border-radius:calc(var(--radius) + 2px);
+  overflow:hidden;box-shadow:var(--shadow-xs);margin-bottom:2rem;
+}
+.summary-table{width:100%;border-collapse:collapse}
+.summary-table th{
+  font-family:var(--font-display);font-size:0.6875rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.1em;color:var(--muted-fg);
+  padding:0.75rem 1rem;text-align:left;
+  border-bottom:1px solid var(--border);background:var(--secondary);
+}
+.summary-table td{padding:0.75rem 1rem;border-bottom:1px solid var(--border);font-size:0.875rem}
+.summary-table tbody tr{cursor:pointer;transition:background 150ms}
+.summary-table tbody tr:hover{background:var(--secondary)}
+.summary-table tbody tr:last-child td{border-bottom:none}
+.service-name{font-weight:600;font-family:var(--font-display);letter-spacing:-0.02em}
+
+/* ── Grade badge ── */
+.grade{
+  display:inline-flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:700;font-size:0.8125rem;
+  min-width:2.25rem;padding:0.125rem 0.5rem;border-radius:var(--radius);
+  letter-spacing:-0.02em;
+}
+.grade-a{background:color-mix(in oklch,var(--success) 12%,transparent);color:var(--success)}
+.grade-b{background:color-mix(in oklch,var(--success) 12%,transparent);color:var(--success)}
+.grade-c{background:color-mix(in oklch,var(--warning) 12%,transparent);color:var(--warning)}
+.grade-d{background:color-mix(in oklch,var(--error) 12%,transparent);color:var(--error)}
+.grade-f{background:color-mix(in oklch,var(--error) 12%,transparent);color:var(--error)}
+
+/* ── Score bar ── */
+.score-bar{display:flex;align-items:center;gap:0.5rem}
+.score-bar-track{width:72px;height:4px;background:var(--secondary);border-radius:2px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:2px;transition:width 450ms cubic-bezier(0.16,1,0.3,1)}
+.score-val{font-size:0.75rem;color:var(--muted-fg);min-width:1.5rem;font-variant-numeric:tabular-nums}
+
+/* ── Issue counts ── */
+.issue-counts{display:flex;gap:0.375rem;font-size:0.75rem;font-weight:500}
+.issue-counts span{padding:0.0625rem 0.375rem;border-radius:var(--radius);font-variant-numeric:tabular-nums}
+.cnt-error{background:color-mix(in oklch,var(--error) 10%,transparent);color:var(--error)}
+.cnt-warning{background:color-mix(in oklch,var(--warning) 10%,transparent);color:var(--warning)}
+.cnt-info{background:color-mix(in oklch,var(--info) 10%,transparent);color:var(--info)}
+
+/* ── Service detail panel ── */
+.detail{
+  display:none;background:var(--card);border:1px solid var(--border);
+  border-radius:calc(var(--radius) + 2px);padding:1.5rem;margin-bottom:1rem;
+  box-shadow:var(--shadow-xs);
+  animation:fadeInPanel 250ms cubic-bezier(0.16,1,0.3,1);
+}
 .detail.open{display:block}
-.dim-row{display:flex;align-items:center;gap:1rem;padding:.5rem 0;border-bottom:1px solid var(--border)}
-.dim-name{width:160px;font-weight:500;font-size:.875rem}
-.dim-bar{flex:1;display:flex;align-items:center;gap:.5rem}
-.dim-bar-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
-.dim-bar-fill{height:100%;border-radius:4px}
-.dim-score{font-size:.875rem;font-weight:600;min-width:2.5rem;text-align:right}
+@keyframes fadeInPanel{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.detail h3{font-family:var(--font-display);font-weight:700;font-size:1.125rem;letter-spacing:-0.035em;margin-bottom:1rem}
+.dim-grid{display:flex;flex-direction:column;gap:0.125rem}
+.dim-row{display:flex;align-items:center;gap:1rem;padding:0.5rem 0;border-bottom:1px solid var(--border)}
+.dim-row:last-of-type{border-bottom:none}
+.dim-name{width:140px;font-size:0.8125rem;font-weight:500;color:var(--muted-fg);flex-shrink:0}
+.dim-bar{flex:1;display:flex;align-items:center;gap:0.5rem}
+.dim-bar-track{flex:1;height:6px;background:var(--secondary);border-radius:3px;overflow:hidden}
+.dim-bar-fill{height:100%;border-radius:3px;transition:width 450ms cubic-bezier(0.16,1,0.3,1)}
+.dim-score{font-family:var(--font-display);font-size:0.875rem;font-weight:600;min-width:2rem;text-align:right}
 
-/* Issues */
-.issues{margin-top:2rem}
-.filter-bar{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
-.issue-row{display:flex;align-items:baseline;gap:.75rem;padding:.375rem 0;font-size:.875rem;border-bottom:1px solid var(--border)}
+/* ── Detail issues ── */
+.detail-issues{margin-top:0.75rem;padding-left:0.5rem}
+.detail-issue{display:flex;align-items:baseline;gap:0.625rem;padding:0.3125rem 0;font-size:0.8125rem}
+.detail-issue .sev{
+  font-size:0.625rem;font-weight:600;padding:0.0625rem 0.3125rem;border-radius:3px;
+  text-transform:uppercase;letter-spacing:0.05em;flex-shrink:0;
+}
+.sev-error{background:color-mix(in oklch,var(--error) 12%,transparent);color:var(--error)}
+.sev-warning{background:color-mix(in oklch,var(--warning) 12%,transparent);color:var(--warning)}
+.sev-info{background:color-mix(in oklch,var(--info) 12%,transparent);color:var(--info)}
+.detail-issue .msg{flex:1;color:var(--card-fg)}
+.detail-issue .file{font-size:0.75rem;color:var(--muted-fg);font-variant-numeric:tabular-nums}
+
+/* ── Issues section ── */
+.issues-section{margin-top:0.5rem}
+.issues-section h2{font-family:var(--font-display);font-weight:700;font-size:1.125rem;letter-spacing:-0.035em;margin-bottom:0.75rem}
+.filter-bar{display:flex;gap:0.375rem;margin-bottom:1rem;flex-wrap:wrap}
+.issue-list{
+  background:var(--card);border:1px solid var(--border);border-radius:calc(var(--radius) + 2px);
+  overflow:hidden;box-shadow:var(--shadow-xs);
+}
+.issue-row{display:flex;align-items:baseline;gap:0.75rem;padding:0.5rem 1rem;font-size:0.8125rem;border-bottom:1px solid var(--border)}
 .issue-row:last-child{border-bottom:none}
-.severity{font-size:.75rem;font-weight:600;padding:.125rem .375rem;border-radius:4px;text-transform:uppercase;min-width:3.5rem;text-align:center}
-.severity-error{background:rgba(239,68,68,.15);color:var(--red)}
-.severity-warning{background:rgba(234,179,8,.15);color:var(--yellow)}
-.severity-info{background:rgba(6,182,212,.15);color:var(--cyan)}
-.issue-service{color:var(--text2);min-width:120px}
+.issue-service{color:var(--muted-fg);min-width:100px;font-weight:500;flex-shrink:0}
 .issue-msg{flex:1}
-.issue-file{color:var(--text3);font-size:.75rem}
+.issue-file{color:var(--muted-fg);font-size:0.75rem;font-variant-numeric:tabular-nums}
 
-/* Sparklines */
+/* ── Sparklines ── */
 .sparkline{margin-top:1rem}
+.sparkline h3{font-size:0.8125rem;margin-bottom:0.25rem}
 .sparkline svg{display:block}
 
-/* Responsive */
+/* ── Trends ── */
+.trends{margin-top:2rem}
+.trends h2{font-family:var(--font-display);font-weight:700;font-size:1.125rem;letter-spacing:-0.035em;margin-bottom:1rem}
+.trend-item{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem}
+.trend-label{font-size:0.8125rem;font-weight:500;min-width:120px}
+
+/* ── Empty state ── */
+.empty{
+  text-align:center;padding:4rem 2rem;
+  color:var(--muted-fg);font-size:0.9375rem;
+}
+.empty-icon{font-size:2rem;margin-bottom:0.75rem;opacity:0.4}
+
+/* ── Beam divider ── */
+.beam{position:relative;height:1px;background:var(--border);margin:2rem 0;overflow:hidden}
+.beam::after{
+  content:'';position:absolute;top:0;left:0;width:40%;height:100%;
+  background:linear-gradient(90deg,transparent,var(--accent-warm),transparent);
+  animation:beamSlide 4s cubic-bezier(0.16,1,0.3,1) infinite;
+}
+@keyframes beamSlide{
+  0%{transform:translateX(-100%);opacity:0}
+  10%{opacity:1}90%{opacity:1}
+  100%{transform:translateX(350%);opacity:0}
+}
+
+/* ── Responsive ── */
 @media(max-width:768px){
-  body{padding:1rem}
-  .summary-table{font-size:.8125rem}
-  .score-bar-track{width:50px}
+  .container{padding:1rem}
+  .summary-table th,.summary-table td{padding:0.5rem 0.625rem;font-size:0.8125rem}
+  .score-bar-track{width:48px}
   .dim-name{width:100px}
+  .dim-row{gap:0.5rem}
+  .issue-row{flex-wrap:wrap;gap:0.375rem}
+  .issue-service{min-width:auto}
+}
+
+/* ── Reduced motion ── */
+@media(prefers-reduced-motion:reduce){
+  .beam::after{animation:none}
+  .detail{animation:none}
+  .score-bar-fill,.dim-bar-fill{transition:none}
 }
 </style>
 </head>
-<body>
+<body class="dark">
 <div class="container">
   <header>
-    <div>
-      <h1>Code Health Report</h1>
+    <div class="brand">
+      <h1>Perfect<span>Line</span> Health</h1>
       <p class="meta" id="generated"></p>
     </div>
-    <div style="display:flex;gap:.5rem">
-      <button id="theme-toggle" onclick="toggleTheme()">Light Mode</button>
-      <button onclick="downloadJson()">Export JSON</button>
+    <div class="header-actions">
+      <button class="btn" id="theme-toggle" onclick="toggleTheme()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        Light
+      </button>
+      <button class="btn" onclick="downloadJson()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
     </div>
   </header>
 
-  <table class="summary-table">
-    <thead><tr id="table-head"></tr></thead>
-    <tbody id="table-body"></tbody>
-  </table>
+  <div class="stat-strip" id="stats"></div>
+
+  <div class="beam"></div>
+
+  <div class="table-wrap">
+    <table class="summary-table">
+      <thead><tr id="table-head"></tr></thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
 
   <div id="details"></div>
 
-  <div class="issues">
+  <div class="beam"></div>
+
+  <div class="issues-section">
     <h2>Issues</h2>
     <div class="filter-bar" id="filters"></div>
-    <div id="issue-list"></div>
+    <div class="issue-list" id="issue-list"></div>
   </div>
 
-  <div id="trends"></div>
+  <div id="trends" class="trends"></div>
 </div>
 
 <script>
@@ -112,15 +307,42 @@ button.active{border-color:var(--blue);color:var(--blue)}
   const data = window.__HEALTH_DATA__
   if (!data) return
 
-  document.getElementById('generated').textContent = 'Generated: ' + data.generated
+  document.getElementById('generated').textContent = 'Generated ' + new Date(data.generated).toLocaleString()
 
   const services = data.services || []
   const history = data.history || []
+
+  if (services.length === 0) {
+    document.querySelector('.table-wrap').innerHTML =
+      '<div class="empty"><div class="empty-icon">&#9776;</div>No services found.<br><span style="font-size:.8125rem">Run <code>pf health</code> from your monorepo root.</span></div>'
+    document.querySelector('.issues-section').style.display = 'none'
+    return
+  }
+
   const dims = []
   const dimSet = new Set()
   services.forEach(s => s.dimensions.forEach(d => {
     if (!dimSet.has(d.dimension)) { dimSet.add(d.dimension); dims.push(d.dimension) }
   }))
+
+  // Stats strip
+  const totalIssues = services.reduce((a,s) => a + s.issueCount.error + s.issueCount.warning + s.issueCount.info, 0)
+  const totalErrors = services.reduce((a,s) => a + s.issueCount.error, 0)
+  const avgScore = Math.round(services.reduce((a,s) => a + s.compositeScore, 0) / services.length)
+  const bestGrade = services.reduce((best,s) => gradeRank(s.grade) < gradeRank(best) ? s.grade : best, services[0].grade)
+
+  const statsHtml =
+    statCard('Services', services.length) +
+    statCard('Avg Score', avgScore) +
+    statCard('Best Grade', bestGrade) +
+    statCard('Errors', totalErrors, totalErrors > 0 ? 'var(--error)' : null) +
+    statCard('Total Issues', totalIssues)
+  document.getElementById('stats').innerHTML = statsHtml
+
+  function statCard(label, value, color) {
+    return '<div class="stat-card"><div class="stat-label">' + label + '</div><div class="stat-value"' +
+      (color ? ' style="color:' + color + '"' : '') + '>' + value + '</div></div>'
+  }
 
   // Grade helpers
   function gradeClass(g) {
@@ -130,35 +352,38 @@ button.active{border-color:var(--blue);color:var(--blue)}
     if (g.startsWith('B')) return 'grade-b'
     return 'grade-a'
   }
+  function gradeRank(g) {
+    const order = ['A+','A','A-','B+','B','B-','C+','C','C-','D','F']
+    const i = order.indexOf(g)
+    return i === -1 ? order.length : i
+  }
   function scoreColor(s) {
-    if (s >= 75) return 'var(--green)'
-    if (s >= 55) return 'var(--yellow)'
-    return 'var(--red)'
+    if (s >= 75) return 'var(--success)'
+    if (s >= 55) return 'var(--warning)'
+    return 'var(--error)'
   }
 
-  // Summary table header
+  // Summary table
   const thead = document.getElementById('table-head')
   thead.innerHTML = '<th>Service</th><th>Grade</th><th>Score</th>' +
-    dims.map(d => '<th>' + abbreviate(d) + '</th>').join('') +
-    '<th>Issues</th>'
+    dims.map(d => '<th>' + abbreviate(d) + '</th>').join('') + '<th>Issues</th>'
 
-  // Summary table rows
   const tbody = document.getElementById('table-body')
   services.forEach((s, i) => {
     const tr = document.createElement('tr')
     tr.onclick = () => toggleDetail(i)
-    let cells = '<td>' + esc(s.service) + '</td>'
+    let cells = '<td class="service-name">' + esc(s.service) + '</td>'
     cells += '<td><span class="grade ' + gradeClass(s.grade) + '">' + s.grade + '</span></td>'
     cells += '<td>' + scoreBarHtml(s.compositeScore) + '</td>'
     dims.forEach(d => {
       const r = s.dimensions.find(x => x.dimension === d)
       cells += '<td>' + (r ? scoreBarHtml(r.rawScore) : '<span class="score-val">—</span>') + '</td>'
     })
-    cells += '<td style="font-size:.8125rem">' +
-      (s.issueCount.error ? '<span style="color:var(--red)">' + s.issueCount.error + 'E</span> ' : '') +
-      (s.issueCount.warning ? '<span style="color:var(--yellow)">' + s.issueCount.warning + 'W</span> ' : '') +
-      (s.issueCount.info ? '<span style="color:var(--cyan)">' + s.issueCount.info + 'I</span>' : '') +
-      '</td>'
+    cells += '<td><div class="issue-counts">' +
+      (s.issueCount.error ? '<span class="cnt-error">' + s.issueCount.error + 'E</span>' : '') +
+      (s.issueCount.warning ? '<span class="cnt-warning">' + s.issueCount.warning + 'W</span>' : '') +
+      (s.issueCount.info ? '<span class="cnt-info">' + s.issueCount.info + 'I</span>' : '') +
+      '</div></td>'
     tr.innerHTML = cells
     tbody.appendChild(tr)
   })
@@ -169,8 +394,8 @@ button.active{border-color:var(--blue);color:var(--blue)}
     const div = document.createElement('div')
     div.className = 'detail'
     div.id = 'detail-' + i
-    let html = '<h3>' + esc(s.service) + ' — ' +
-      '<span class="grade ' + gradeClass(s.grade) + '">' + s.grade + '</span> (' + s.compositeScore + '/100)</h3>'
+    let html = '<h3>' + esc(s.service) + ' <span class="grade ' + gradeClass(s.grade) + '" style="font-size:.875rem;vertical-align:middle">' + s.grade + '</span> <span style="color:var(--muted-fg);font-size:.875rem;font-weight:400">' + s.compositeScore + '/100</span></h3>'
+    html += '<div class="dim-grid">'
     s.dimensions.forEach(d => {
       html += '<div class="dim-row">'
       html += '<span class="dim-name">' + esc(d.dimension) + '</span>'
@@ -178,16 +403,20 @@ button.active{border-color:var(--blue);color:var(--blue)}
         d.rawScore + '%;background:' + scoreColor(d.rawScore) + '"></div></div></div>'
       html += '<span class="dim-score" style="color:' + scoreColor(d.rawScore) + '">' + d.rawScore + '</span>'
       html += '</div>'
-      d.issues.forEach(issue => {
-        html += '<div class="issue-row" style="padding-left:1rem">'
-        html += '<span class="severity severity-' + issue.severity + '">' + issue.severity + '</span>'
-        html += '<span class="issue-msg">' + esc(issue.message) + '</span>'
-        if (issue.file) html += '<span class="issue-file">' + esc(issue.file) + (issue.line ? ':' + issue.line : '') + '</span>'
+      if (d.issues.length > 0) {
+        html += '<div class="detail-issues">'
+        d.issues.forEach(issue => {
+          html += '<div class="detail-issue">'
+          html += '<span class="sev sev-' + issue.severity + '">' + issue.severity + '</span>'
+          html += '<span class="msg">' + esc(issue.message) + '</span>'
+          if (issue.file) html += '<span class="file">' + esc(issue.file) + (issue.line ? ':' + issue.line : '') + '</span>'
+          html += '</div>'
+        })
         html += '</div>'
-      })
+      }
     })
+    html += '</div>'
 
-    // Sparkline for this service
     if (history.length >= 3) {
       const points = history.map(snap => {
         const svc = snap.services.find(x => x.service === s.service)
@@ -203,7 +432,7 @@ button.active{border-color:var(--blue);color:var(--blue)}
   })
 
   // Issue list
-  let activeFilters = { severity: null, service: null }
+  let activeFilters = { severity: null }
   const allIssues = []
   services.forEach(s => s.dimensions.forEach(d => d.issues.forEach(issue => {
     allIssues.push({ service: s.service, dimension: d.dimension, issue })
@@ -213,17 +442,16 @@ button.active{border-color:var(--blue);color:var(--blue)}
     return order[a.issue.severity] - order[b.issue.severity]
   })
 
-  // Filter buttons
   const filterBar = document.getElementById('filters')
   const severities = ['all', 'error', 'warning', 'info']
   severities.forEach(sev => {
     const btn = document.createElement('button')
-    btn.textContent = sev === 'all' ? 'All' : sev.charAt(0).toUpperCase() + sev.slice(1) +
-      ' (' + allIssues.filter(x => sev === 'all' || x.issue.severity === sev).length + ')'
-    if (sev === 'all') btn.classList.add('active')
+    const count = allIssues.filter(x => sev === 'all' || x.issue.severity === sev).length
+    btn.className = 'btn' + (sev === 'all' ? ' active' : '')
+    btn.textContent = (sev === 'all' ? 'All' : sev.charAt(0).toUpperCase() + sev.slice(1)) + ' (' + count + ')'
     btn.onclick = () => {
       activeFilters.severity = sev === 'all' ? null : sev
-      filterBar.querySelectorAll('button').forEach(b => b.classList.remove('active'))
+      filterBar.querySelectorAll('.btn').forEach(b => b.classList.remove('active'))
       btn.classList.add('active')
       renderIssues()
     }
@@ -234,12 +462,15 @@ button.active{border-color:var(--blue);color:var(--blue)}
     const list = document.getElementById('issue-list')
     const filtered = allIssues.filter(x => {
       if (activeFilters.severity && x.issue.severity !== activeFilters.severity) return false
-      if (activeFilters.service && x.service !== activeFilters.service) return false
       return true
     })
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="empty" style="padding:2rem">No issues found.</div>'
+      return
+    }
     list.innerHTML = filtered.map(x =>
       '<div class="issue-row">' +
-      '<span class="severity severity-' + x.issue.severity + '">' + x.issue.severity + '</span>' +
+      '<span class="sev sev-' + x.issue.severity + '">' + x.issue.severity + '</span>' +
       '<span class="issue-service">' + esc(x.service) + '</span>' +
       '<span class="issue-msg">' + esc(x.issue.message) + '</span>' +
       (x.issue.file ? '<span class="issue-file">' + esc(x.issue.file) + (x.issue.line ? ':' + x.issue.line : '') + '</span>' : '') +
@@ -248,18 +479,17 @@ button.active{border-color:var(--blue);color:var(--blue)}
   }
   renderIssues()
 
-  // Trend section
+  // Trends
   if (history.length >= 3) {
     const trendsDiv = document.getElementById('trends')
-    let html = '<h2 style="margin-top:2rem">Score Trends</h2>'
+    let html = '<h2>Score Trends</h2>'
     services.forEach(s => {
       const points = history.map(snap => {
         const svc = snap.services.find(x => x.service === s.service)
         return svc ? svc.compositeScore : null
       }).filter(x => x !== null)
       if (points.length >= 3) {
-        html += '<div style="margin-bottom:1rem"><span style="font-size:.875rem;font-weight:500">' +
-          esc(s.service) + '</span>' + sparklineSvg(points) + '</div>'
+        html += '<div class="trend-item"><span class="trend-label">' + esc(s.service) + '</span>' + sparklineSvg(points) + '</div>'
       }
     })
     trendsDiv.innerHTML = html
@@ -294,22 +524,24 @@ button.active{border-color:var(--blue);color:var(--blue)}
 
   function abbreviate(dim) {
     const map = {
-      'Type Safety': 'TypeSafe', 'Lint Compliance': 'Lint', 'Test Coverage': 'Coverage',
-      'Test Health': 'TestH.', 'Dependency Health': 'Deps', 'Bundle Health': 'Bundle', 'Code Complexity': 'Complex.'
+      'Type Safety': 'Types', 'Lint Compliance': 'Lint', 'Test Coverage': 'Coverage',
+      'Test Health': 'Tests', 'Dependency Health': 'Deps', 'Bundle Health': 'Bundle', 'Code Complexity': 'Complex.'
     }
     return map[dim] || dim.substring(0, 8)
   }
 
   function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML }
 
-  // Theme toggle
+  // Theme
   window.toggleTheme = function() {
-    document.body.classList.toggle('light')
+    document.body.classList.toggle('dark')
+    const isDark = document.body.classList.contains('dark')
     const btn = document.getElementById('theme-toggle')
-    btn.textContent = document.body.classList.contains('light') ? 'Dark Mode' : 'Light Mode'
+    btn.innerHTML = isDark
+      ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Light'
+      : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Dark'
   }
 
-  // Export
   window.downloadJson = function() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
