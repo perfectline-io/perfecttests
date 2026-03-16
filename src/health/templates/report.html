@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PerfectLine Code Health Report</title>
+<!-- __HEALTH_DATA__ -->
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--border:#2a2a2a;
+  --text:#e5e5e5;--text2:#a0a0a0;--text3:#666;
+  --green:#22c55e;--yellow:#eab308;--red:#ef4444;--blue:#3b82f6;--cyan:#06b6d4;
+  --radius:8px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+.light{
+  --bg:#fafafa;--surface:#fff;--surface2:#f5f5f5;--border:#e5e5e5;
+  --text:#171717;--text2:#525252;--text3:#a0a0a0;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.5;padding:2rem}
+.container{max-width:1200px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem}
+h1{font-size:1.5rem;font-weight:600}
+h2{font-size:1.125rem;font-weight:600;margin-bottom:1rem}
+h3{font-size:1rem;font-weight:600;margin-bottom:.5rem}
+.meta{color:var(--text2);font-size:.875rem}
+button{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.375rem .75rem;
+  border-radius:var(--radius);cursor:pointer;font-size:.8125rem}
+button:hover{border-color:var(--text3)}
+button.active{border-color:var(--blue);color:var(--blue)}
+
+/* Summary Table */
+.summary-table{width:100%;border-collapse:collapse;margin-bottom:2rem}
+.summary-table th,.summary-table td{padding:.625rem .75rem;text-align:left;border-bottom:1px solid var(--border)}
+.summary-table th{color:var(--text2);font-weight:500;font-size:.8125rem;text-transform:uppercase;letter-spacing:.05em}
+.summary-table tr{cursor:pointer;transition:background .15s}
+.summary-table tr:hover{background:var(--surface2)}
+.grade{font-weight:700;font-size:1rem}
+.grade-a{color:var(--green)}.grade-b{color:var(--green)}.grade-c{color:var(--yellow)}.grade-d{color:var(--red)}.grade-f{color:var(--red)}
+.score-bar{display:flex;align-items:center;gap:.5rem}
+.score-bar-track{width:80px;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.score-val{font-size:.8125rem;color:var(--text2);min-width:1.5rem}
+
+/* Service Detail */
+.detail{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem}
+.detail.open{display:block}
+.dim-row{display:flex;align-items:center;gap:1rem;padding:.5rem 0;border-bottom:1px solid var(--border)}
+.dim-name{width:160px;font-weight:500;font-size:.875rem}
+.dim-bar{flex:1;display:flex;align-items:center;gap:.5rem}
+.dim-bar-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.dim-bar-fill{height:100%;border-radius:4px}
+.dim-score{font-size:.875rem;font-weight:600;min-width:2.5rem;text-align:right}
+
+/* Issues */
+.issues{margin-top:2rem}
+.filter-bar{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.issue-row{display:flex;align-items:baseline;gap:.75rem;padding:.375rem 0;font-size:.875rem;border-bottom:1px solid var(--border)}
+.issue-row:last-child{border-bottom:none}
+.severity{font-size:.75rem;font-weight:600;padding:.125rem .375rem;border-radius:4px;text-transform:uppercase;min-width:3.5rem;text-align:center}
+.severity-error{background:rgba(239,68,68,.15);color:var(--red)}
+.severity-warning{background:rgba(234,179,8,.15);color:var(--yellow)}
+.severity-info{background:rgba(6,182,212,.15);color:var(--cyan)}
+.issue-service{color:var(--text2);min-width:120px}
+.issue-msg{flex:1}
+.issue-file{color:var(--text3);font-size:.75rem}
+
+/* Sparklines */
+.sparkline{margin-top:1rem}
+.sparkline svg{display:block}
+
+/* Responsive */
+@media(max-width:768px){
+  body{padding:1rem}
+  .summary-table{font-size:.8125rem}
+  .score-bar-track{width:50px}
+  .dim-name{width:100px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>Code Health Report</h1>
+      <p class="meta" id="generated"></p>
+    </div>
+    <div style="display:flex;gap:.5rem">
+      <button id="theme-toggle" onclick="toggleTheme()">Light Mode</button>
+      <button onclick="downloadJson()">Export JSON</button>
+    </div>
+  </header>
+
+  <table class="summary-table">
+    <thead><tr id="table-head"></tr></thead>
+    <tbody id="table-body"></tbody>
+  </table>
+
+  <div id="details"></div>
+
+  <div class="issues">
+    <h2>Issues</h2>
+    <div class="filter-bar" id="filters"></div>
+    <div id="issue-list"></div>
+  </div>
+
+  <div id="trends"></div>
+</div>
+
+<script>
+(function(){
+  const data = window.__HEALTH_DATA__
+  if (!data) return
+
+  document.getElementById('generated').textContent = 'Generated: ' + data.generated
+
+  const services = data.services || []
+  const history = data.history || []
+  const dims = []
+  const dimSet = new Set()
+  services.forEach(s => s.dimensions.forEach(d => {
+    if (!dimSet.has(d.dimension)) { dimSet.add(d.dimension); dims.push(d.dimension) }
+  }))
+
+  // Grade helpers
+  function gradeClass(g) {
+    if (g === 'F') return 'grade-f'
+    if (g === 'D') return 'grade-d'
+    if (g.startsWith('C')) return 'grade-c'
+    if (g.startsWith('B')) return 'grade-b'
+    return 'grade-a'
+  }
+  function scoreColor(s) {
+    if (s >= 75) return 'var(--green)'
+    if (s >= 55) return 'var(--yellow)'
+    return 'var(--red)'
+  }
+
+  // Summary table header
+  const thead = document.getElementById('table-head')
+  thead.innerHTML = '<th>Service</th><th>Grade</th><th>Score</th>' +
+    dims.map(d => '<th>' + abbreviate(d) + '</th>').join('') +
+    '<th>Issues</th>'
+
+  // Summary table rows
+  const tbody = document.getElementById('table-body')
+  services.forEach((s, i) => {
+    const tr = document.createElement('tr')
+    tr.onclick = () => toggleDetail(i)
+    let cells = '<td>' + esc(s.service) + '</td>'
+    cells += '<td><span class="grade ' + gradeClass(s.grade) + '">' + s.grade + '</span></td>'
+    cells += '<td>' + scoreBarHtml(s.compositeScore) + '</td>'
+    dims.forEach(d => {
+      const r = s.dimensions.find(x => x.dimension === d)
+      cells += '<td>' + (r ? scoreBarHtml(r.rawScore) : '<span class="score-val">—</span>') + '</td>'
+    })
+    cells += '<td style="font-size:.8125rem">' +
+      (s.issueCount.error ? '<span style="color:var(--red)">' + s.issueCount.error + 'E</span> ' : '') +
+      (s.issueCount.warning ? '<span style="color:var(--yellow)">' + s.issueCount.warning + 'W</span> ' : '') +
+      (s.issueCount.info ? '<span style="color:var(--cyan)">' + s.issueCount.info + 'I</span>' : '') +
+      '</td>'
+    tr.innerHTML = cells
+    tbody.appendChild(tr)
+  })
+
+  // Detail panels
+  const detailsContainer = document.getElementById('details')
+  services.forEach((s, i) => {
+    const div = document.createElement('div')
+    div.className = 'detail'
+    div.id = 'detail-' + i
+    let html = '<h3>' + esc(s.service) + ' — ' +
+      '<span class="grade ' + gradeClass(s.grade) + '">' + s.grade + '</span> (' + s.compositeScore + '/100)</h3>'
+    s.dimensions.forEach(d => {
+      html += '<div class="dim-row">'
+      html += '<span class="dim-name">' + esc(d.dimension) + '</span>'
+      html += '<div class="dim-bar"><div class="dim-bar-track"><div class="dim-bar-fill" style="width:' +
+        d.rawScore + '%;background:' + scoreColor(d.rawScore) + '"></div></div></div>'
+      html += '<span class="dim-score" style="color:' + scoreColor(d.rawScore) + '">' + d.rawScore + '</span>'
+      html += '</div>'
+      d.issues.forEach(issue => {
+        html += '<div class="issue-row" style="padding-left:1rem">'
+        html += '<span class="severity severity-' + issue.severity + '">' + issue.severity + '</span>'
+        html += '<span class="issue-msg">' + esc(issue.message) + '</span>'
+        if (issue.file) html += '<span class="issue-file">' + esc(issue.file) + (issue.line ? ':' + issue.line : '') + '</span>'
+        html += '</div>'
+      })
+    })
+
+    // Sparkline for this service
+    if (history.length >= 3) {
+      const points = history.map(snap => {
+        const svc = snap.services.find(x => x.service === s.service)
+        return svc ? svc.compositeScore : null
+      }).filter(x => x !== null)
+      if (points.length >= 3) {
+        html += '<div class="sparkline"><h3>Trend</h3>' + sparklineSvg(points) + '</div>'
+      }
+    }
+
+    div.innerHTML = html
+    detailsContainer.appendChild(div)
+  })
+
+  // Issue list
+  let activeFilters = { severity: null, service: null }
+  const allIssues = []
+  services.forEach(s => s.dimensions.forEach(d => d.issues.forEach(issue => {
+    allIssues.push({ service: s.service, dimension: d.dimension, issue })
+  })))
+  allIssues.sort((a, b) => {
+    const order = { error: 0, warning: 1, info: 2 }
+    return order[a.issue.severity] - order[b.issue.severity]
+  })
+
+  // Filter buttons
+  const filterBar = document.getElementById('filters')
+  const severities = ['all', 'error', 'warning', 'info']
+  severities.forEach(sev => {
+    const btn = document.createElement('button')
+    btn.textContent = sev === 'all' ? 'All' : sev.charAt(0).toUpperCase() + sev.slice(1) +
+      ' (' + allIssues.filter(x => sev === 'all' || x.issue.severity === sev).length + ')'
+    if (sev === 'all') btn.classList.add('active')
+    btn.onclick = () => {
+      activeFilters.severity = sev === 'all' ? null : sev
+      filterBar.querySelectorAll('button').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      renderIssues()
+    }
+    filterBar.appendChild(btn)
+  })
+
+  function renderIssues() {
+    const list = document.getElementById('issue-list')
+    const filtered = allIssues.filter(x => {
+      if (activeFilters.severity && x.issue.severity !== activeFilters.severity) return false
+      if (activeFilters.service && x.service !== activeFilters.service) return false
+      return true
+    })
+    list.innerHTML = filtered.map(x =>
+      '<div class="issue-row">' +
+      '<span class="severity severity-' + x.issue.severity + '">' + x.issue.severity + '</span>' +
+      '<span class="issue-service">' + esc(x.service) + '</span>' +
+      '<span class="issue-msg">' + esc(x.issue.message) + '</span>' +
+      (x.issue.file ? '<span class="issue-file">' + esc(x.issue.file) + (x.issue.line ? ':' + x.issue.line : '') + '</span>' : '') +
+      '</div>'
+    ).join('')
+  }
+  renderIssues()
+
+  // Trend section
+  if (history.length >= 3) {
+    const trendsDiv = document.getElementById('trends')
+    let html = '<h2 style="margin-top:2rem">Score Trends</h2>'
+    services.forEach(s => {
+      const points = history.map(snap => {
+        const svc = snap.services.find(x => x.service === s.service)
+        return svc ? svc.compositeScore : null
+      }).filter(x => x !== null)
+      if (points.length >= 3) {
+        html += '<div style="margin-bottom:1rem"><span style="font-size:.875rem;font-weight:500">' +
+          esc(s.service) + '</span>' + sparklineSvg(points) + '</div>'
+      }
+    })
+    trendsDiv.innerHTML = html
+  }
+
+  // Helpers
+  function toggleDetail(i) {
+    const el = document.getElementById('detail-' + i)
+    el.classList.toggle('open')
+  }
+
+  function scoreBarHtml(score) {
+    return '<div class="score-bar"><div class="score-bar-track"><div class="score-bar-fill" style="width:' +
+      score + '%;background:' + scoreColor(score) + '"></div></div><span class="score-val">' + score + '</span></div>'
+  }
+
+  function sparklineSvg(points) {
+    const w = 200, h = 40, pad = 2
+    const min = Math.min(...points), max = Math.max(...points)
+    const range = max - min || 1
+    const coords = points.map((p, i) => {
+      const x = pad + (i / (points.length - 1)) * (w - pad * 2)
+      const y = pad + (1 - (p - min) / range) * (h - pad * 2)
+      return x + ',' + y
+    })
+    const color = scoreColor(points[points.length - 1])
+    return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' +
+      '<polyline points="' + coords.join(' ') + '" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<circle cx="' + coords[coords.length - 1].split(',')[0] + '" cy="' + coords[coords.length - 1].split(',')[1] +
+      '" r="2.5" fill="' + color + '"/></svg>'
+  }
+
+  function abbreviate(dim) {
+    const map = {
+      'Type Safety': 'TypeSafe', 'Lint Compliance': 'Lint', 'Test Coverage': 'Coverage',
+      'Test Health': 'TestH.', 'Dependency Health': 'Deps', 'Bundle Health': 'Bundle', 'Code Complexity': 'Complex.'
+    }
+    return map[dim] || dim.substring(0, 8)
+  }
+
+  function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML }
+
+  // Theme toggle
+  window.toggleTheme = function() {
+    document.body.classList.toggle('light')
+    const btn = document.getElementById('theme-toggle')
+    btn.textContent = document.body.classList.contains('light') ? 'Dark Mode' : 'Light Mode'
+  }
+
+  // Export
+  window.downloadJson = function() {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = 'health-report.json'
+    a.click()
+  }
+})()
+</script>
+</body>
+</html>

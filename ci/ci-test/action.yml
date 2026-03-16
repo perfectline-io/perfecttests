@@ -1,0 +1,78 @@
+name: 'PerfectLine CI Test'
+description: 'Lint, typecheck, and run unit tests for a Next.js app'
+
+inputs:
+  bun-version:
+    description: 'Bun version'
+    default: '1.3.5'
+  npm-token:
+    description: 'NPM_TOKEN for private packages'
+    required: true
+  auth-secret:
+    description: 'AUTH_SECRET for test env'
+    default: 'test-secret-for-ci'
+  database-url:
+    description: 'DATABASE_URL for migration check'
+    default: 'postgresql://build:placeholder@localhost/db'
+  check-migrations:
+    description: 'Run drizzle migration check'
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: ${{ inputs.bun-version }}
+
+    - name: Install dependencies
+      shell: bash
+      run: bun install
+      env:
+        NPM_TOKEN: ${{ inputs.npm-token }}
+
+    - name: Lint
+      shell: bash
+      run: bun run lint
+
+    - name: Typecheck
+      shell: bash
+      run: bun run typecheck
+
+    - name: Test with coverage
+      shell: bash
+      run: bun run test:coverage --ci
+      env:
+        AUTH_SECRET: ${{ inputs.auth-secret }}
+        AUTH_URL: http://localhost:3000
+
+    - name: Upload coverage
+      uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: coverage
+        path: coverage/
+        retention-days: 7
+
+    - name: Check migrations
+      if: inputs.check-migrations == 'true'
+      shell: bash
+      run: |
+        ORIG=$(ls drizzle/*.sql 2>/dev/null | wc -l)
+        cp -r drizzle /tmp/migration-check
+        bun drizzle-kit generate --dialect postgresql --schema lib/db/schema.ts --out /tmp/migration-check 2>&1
+        AFTER=$(ls /tmp/migration-check/*.sql 2>/dev/null | wc -l)
+        if [ "$AFTER" -gt "$ORIG" ]; then
+          echo "Schema changes detected without a migration file. Run: bun db:generate"
+          exit 1
+        fi
+      env:
+        DATABASE_URL: ${{ inputs.database-url }}
+
+    - name: Build
+      shell: bash
+      run: bun run build
+      env:
+        AUTH_SECRET: ${{ inputs.auth-secret }}
+        AUTH_URL: http://localhost:3000
+        DATABASE_URL: ${{ inputs.database-url }}

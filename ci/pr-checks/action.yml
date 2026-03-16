@@ -1,0 +1,36 @@
+name: 'PerfectLine PR Checks'
+description: 'Validate branch name, PR title, and PR body format'
+
+inputs:
+  branch-pattern:
+    description: 'Regex pattern for valid branch names'
+    default: '(feature|bugfix|hotfix|chore|revert|dependabot)/.*'
+  require-sections:
+    description: 'Comma-separated required PR body sections'
+    default: '## Summary,## Changes,## Test plan'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate branch name
+      shell: bash
+      run: |
+        BRANCH="${GITHUB_HEAD_REF}"
+        PATTERN="${{ inputs.branch-pattern }}"
+        if [[ ! "$BRANCH" =~ ^${PATTERN}$ ]]; then
+          echo "Branch '$BRANCH' doesn't match pattern '$PATTERN'"
+          exit 1
+        fi
+
+    - name: Validate PR body
+      shell: bash
+      env:
+        PR_BODY: ${{ github.event.pull_request.body }}
+      run: |
+        IFS=',' read -ra SECTIONS <<< "${{ inputs.require-sections }}"
+        for section in "${SECTIONS[@]}"; do
+          if ! echo "$PR_BODY" | grep -q "$section"; then
+            echo "Missing required section: $section"
+            exit 1
+          fi
+        done

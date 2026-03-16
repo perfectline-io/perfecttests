@@ -1,0 +1,97 @@
+name: 'PerfectLine E2E Test'
+description: 'Run Playwright E2E tests for a Next.js app'
+
+inputs:
+  bun-version:
+    description: 'Bun version'
+    default: '1.3.5'
+  npm-token:
+    description: 'NPM_TOKEN for private packages'
+    required: true
+  browser:
+    description: 'Playwright browser to install'
+    default: 'chromium'
+  stripe-enabled:
+    description: 'Whether to start Stripe webhook listener'
+    default: 'false'
+  stripe-secret-key:
+    description: 'Stripe test secret key'
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: ${{ inputs.bun-version }}
+
+    - name: Install dependencies
+      shell: bash
+      run: bun install
+      env:
+        NPM_TOKEN: ${{ inputs.npm-token }}
+
+    - name: Install Playwright browsers
+      shell: bash
+      run: bunx playwright install ${{ inputs.browser }} --with-deps
+
+    - name: Build
+      shell: bash
+      run: bun run build
+
+    - name: Install Stripe CLI
+      if: inputs.stripe-enabled == 'true'
+      shell: bash
+      run: |
+        curl -s https://packages.stripe.dev/api/security/keypair/stripe-cli-gpg/public \
+          | gpg --dearmor \
+          | sudo tee /usr/share/keyrings/stripe.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/stripe.gpg] \
+          https://packages.stripe.dev/stripe-cli-debian-local stable main" \
+          | sudo tee /etc/apt/sources.list.d/stripe.list > /dev/null
+        sudo apt-get update -q
+        sudo apt-get install -q stripe
+
+    - name: Start Stripe listener
+      if: inputs.stripe-enabled == 'true'
+      shell: bash
+      run: |
+        stripe listen \
+          --api-key ${{ inputs.stripe-secret-key }} \
+          --forward-to http://localhost:3000/api/webhooks/stripe \
+          2>&1 | tee /tmp/stripe-listener.log &
+        timeout 30 bash -c 'until grep -qE "whsec_[A-Za-z0-9]+" /tmp/stripe-listener.log 2>/dev/null; do sleep 1; done'
+        SECRET=$(grep -oE "whsec_[A-Za-z0-9]+" /tmp/stripe-listener.log | head -1)
+        echo "STRIPE_WEBHOOK_SECRET=$SECRET" >> "$GITHUB_ENV"
+
+    - name: Start server
+      shell: bash
+      run: bun start > /tmp/nextjs.log 2>&1 &
+
+    - name: Wait for server
+      shell: bash
+      run: |
+        timeout 60 bash -c 'until curl -sfL http://localhost:3000 2>/dev/null; do sleep 2; done' \
+          || { echo "Server did not start in 60s"; cat /tmp/nextjs.log; exit 1; }
+
+    - name: Run Playwright
+      shell: bash
+      run: bunx playwright test
+      env:
+        CI: true
+
+    - name: Upload report
+      uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 14
+
+    - name: Upload screenshots
+      uses: actions/upload-artifact@v7
+      if: failure()
+      with:
+        name: playwright-screenshots
+        path: test-results/
+        retention-days: 7

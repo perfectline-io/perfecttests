@@ -1,0 +1,76 @@
+name: Publish @perfectline-io/testing
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Typecheck
+        run: bunx tsc --noEmit
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump patch version
+        id: version
+        run: |
+          LAST_TAG=$(git tag --list "testing-v*" --sort=-version:refname | head -1)
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"%s" | head -20)
+          else
+            COMMITS=$(git log "$LAST_TAG"..HEAD --pretty=format:"%s" | head -20)
+          fi
+
+          if echo "$COMMITS" | grep -qE "^feat(\(.+\))?!:|^.+!:|BREAKING CHANGE"; then
+            BUMP="major"
+          elif echo "$COMMITS" | grep -qE "^feat(\(.+\))?:"; then
+            BUMP="minor"
+          else
+            BUMP="patch"
+          fi
+
+          npm version "$BUMP" --no-git-tag-version
+          VERSION=$(node -e "console.log(require('./package.json').version)")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and tag version bump
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          git add package.json
+          git commit -m "chore: release @perfectline-io/testing v$VERSION [skip ci]"
+          git tag "testing-v$VERSION"
+          git push origin main --tags
+
+      - name: Set up .npmrc for GitHub Packages
+        run: |
+          echo "@perfectline-io:registry=https://npm.pkg.github.com" >> ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+
+      - name: Publish to GitHub Packages
+        run: bun publish --no-git-checks

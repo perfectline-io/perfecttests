@@ -1,0 +1,66 @@
+name: 'PerfectLine Health Check'
+description: 'Run code health analysis and post results'
+
+inputs:
+  services:
+    description: 'Comma-separated service paths to analyze (or "all")'
+    default: 'all'
+  fail-below:
+    description: 'Fail if any service scores below this grade (e.g. "C")'
+    default: ''
+  comment-on-pr:
+    description: 'Post health report as PR comment'
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run health analysis
+      shell: bash
+      run: bunx pf health --json --output .perfectline/health-report/
+
+    - name: Check thresholds
+      if: inputs.fail-below != ''
+      shell: bash
+      run: |
+        grade_to_num() {
+          case "$1" in
+            A) echo 5 ;; B) echo 4 ;; C) echo 3 ;; D) echo 2 ;; F) echo 1 ;; *) echo 0 ;;
+          esac
+        }
+        REPORT=$(cat .perfectline/health-report/snapshots/latest.json)
+        MIN_GRADE="${{ inputs.fail-below }}"
+        MIN_NUM=$(grade_to_num "$MIN_GRADE")
+        FAILED=0
+        while read -r service grade score; do
+          GRADE_NUM=$(grade_to_num "$grade")
+          if [ "$GRADE_NUM" -lt "$MIN_NUM" ]; then
+            echo "FAIL: $service scored $grade ($score) — below minimum $MIN_GRADE"
+            FAILED=1
+          fi
+        done <<< "$(echo "$REPORT" | jq -r '.services[] | "\(.service) \(.grade) \(.compositeScore)"')"
+        if [ "$FAILED" -eq 1 ]; then
+          exit 1
+        fi
+
+    - name: Comment on PR
+      if: inputs.comment-on-pr == 'true' && github.event_name == 'pull_request'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        REPORT=$(cat .perfectline/health-report/snapshots/latest.json)
+        BODY=$(echo "$REPORT" | jq -r '
+          "## Code Health Report\n\n" +
+          "| Service | Grade | Score | Issues |\n|---|---|---|---|\n" +
+          (.services | map("| " + .service + " | " + .grade + " | " + (.compositeScore|tostring) + " | " + (.issueCount.error|tostring) + "E " + (.issueCount.warning|tostring) + "W |") | join("\n"))
+        ')
+        gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+
+    - name: Upload report
+      uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: health-report
+        path: .perfectline/health-report/
+        retention-days: 30

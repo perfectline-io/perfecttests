@@ -1,0 +1,52 @@
+{
+  "name": "@perfectline-io/testing",
+  "version": "0.1.0",
+  "type": "module",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "files": [
+    "src/"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./jest": "./src/jest/config.ts",
+    "./jest/setup": "./src/jest/setup.ts",
+    "./playwright": "./src/playwright/config.ts",
+    "./playwright/fixtures": "./src/playwright/fixtures.ts",
+    "./playwright/setup": "./src/playwright/global-setup.ts",
+    "./mocks": "./src/mocks/index.ts",
+    "./mocks/session": "./src/mocks/session.ts",
+    "./mocks/platform": "./src/mocks/platform.ts",
+    "./mocks/next-request": "./src/mocks/next-request.ts",
+    "./helpers": "./src/helpers/index.ts",
+    "./helpers/auth": "./src/helpers/auth.ts",
+    "./helpers/db": "./src/helpers/db.ts",
+    "./health": "./src/health/index.ts",
+    "./health/collectors": "./src/health/collectors/index.ts"
+  },
+  "peerDependencies": {
+    "@testing-library/jest-dom": ">=6.0.0",
+    "next": ">=14.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@testing-library/jest-dom": {
+      "optional": true
+    },
+    "@playwright/test": {
+      "optional": true
+    },
+    "dotenv": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "glob": "^13.0.6"
+  }
+}
