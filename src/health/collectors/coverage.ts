@@ -73,19 +73,25 @@ export const coverageCollector: Collector = {
       lines * 0.4 + branches * 0.3 + functions * 0.2 + statements * 0.1,
     )
 
-    // Flag files with 0% coverage
+    // Flag files with low or zero coverage
     for (const [filePath, data] of Object.entries(summary)) {
       if (filePath === 'total') continue
-      if (
-        data.lines.pct === 0 &&
-        data.branches.pct === 0 &&
-        data.functions.pct === 0 &&
-        data.statements.pct === 0
-      ) {
+      const relPath = filePath.replace(servicePath + '/', '')
+      const linePct = data.lines.pct
+
+      if (linePct === 0) {
         issues.push({
-          severity: 'info',
-          message: '0% coverage',
-          file: filePath.replace(servicePath + '/', ''),
+          severity: 'warning',
+          message: `0% test coverage — no tests exist for this file`,
+          file: relPath,
+          fix: 'Add unit tests for this file',
+        })
+      } else if (linePct < 30) {
+        issues.push({
+          severity: 'warning',
+          message: `Low test coverage (${linePct}% lines)`,
+          file: relPath,
+          fix: 'Add more test cases to improve coverage',
         })
       }
     }
