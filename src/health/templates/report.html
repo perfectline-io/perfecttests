@@ -326,8 +326,8 @@ header .brand{display:flex;flex-direction:column;gap:0.25rem}
   }))
 
   // Stats strip
-  const totalIssues = services.reduce((a,s) => a + s.issueCount.error + s.issueCount.warning + s.issueCount.info, 0)
   const totalErrors = services.reduce((a,s) => a + s.issueCount.error, 0)
+  const totalWarnings = services.reduce((a,s) => a + s.issueCount.warning, 0)
   const avgScore = Math.round(services.reduce((a,s) => a + s.compositeScore, 0) / services.length)
   const bestGrade = services.reduce((best,s) => gradeRank(s.grade) < gradeRank(best) ? s.grade : best, services[0].grade)
 
@@ -336,7 +336,7 @@ header .brand{display:flex;flex-direction:column;gap:0.25rem}
     statCard('Avg Score', avgScore) +
     statCard('Best Grade', bestGrade) +
     statCard('Errors', totalErrors, totalErrors > 0 ? 'var(--error)' : null) +
-    statCard('Total Issues', totalIssues)
+    statCard('Warnings', totalWarnings, totalWarnings > 0 ? 'var(--warning)' : null)
   document.getElementById('stats').innerHTML = statsHtml
 
   function statCard(label, value, color) {
@@ -432,7 +432,12 @@ header .brand{display:flex;flex-direction:column;gap:0.25rem}
   })
 
   // Issue list
-  let activeFilters = { severity: null }
+  // Default to showing errors+warnings only (not info)
+  const hasErrors = services.some(s => s.issueCount.error > 0)
+  const hasWarnings = services.some(s => s.issueCount.warning > 0)
+  const defaultSev = hasErrors ? 'error' : hasWarnings ? 'warning' : 'all'
+  let activeFilters = { severity: defaultSev === 'all' ? null : defaultSev }
+
   const allIssues = []
   services.forEach(s => s.dimensions.forEach(d => d.issues.forEach(issue => {
     allIssues.push({ service: s.service, dimension: d.dimension, issue })
@@ -447,7 +452,7 @@ header .brand{display:flex;flex-direction:column;gap:0.25rem}
   severities.forEach(sev => {
     const btn = document.createElement('button')
     const count = allIssues.filter(x => sev === 'all' || x.issue.severity === sev).length
-    btn.className = 'btn' + (sev === 'all' ? ' active' : '')
+    btn.className = 'btn' + (sev === defaultSev ? ' active' : '')
     btn.textContent = (sev === 'all' ? 'All' : sev.charAt(0).toUpperCase() + sev.slice(1)) + ' (' + count + ')'
     btn.onclick = () => {
       activeFilters.severity = sev === 'all' ? null : sev
