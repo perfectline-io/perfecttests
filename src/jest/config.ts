@@ -55,6 +55,9 @@ export function createJestConfig(options: JestConfigOptions = {}) {
       '<rootDir>/node_modules/',
       '<rootDir>/.next/',
     ],
+    transformIgnorePatterns: [
+      'node_modules/(?!(@perfectline-io)/)',
+    ],
     collectCoverageFrom: coverageFrom ?? defaultCoverageFrom,
     coverageReporters: ['json-summary', 'text', 'lcov'],
     ...(coverageLevel ? { coverageThreshold: coverageThresholds[coverageLevel] } : {}),
