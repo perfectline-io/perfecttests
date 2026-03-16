@@ -70,11 +70,17 @@ jobs:
           git tag "testing-v$VERSION"
           git push origin main --tags
 
-      - name: Set up .npmrc for npm
+      - name: Publish to npm (public)
         run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
-
-      - name: Publish to npm
-        run: npm publish --access public
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish to GitHub Packages (internal)
+        run: |
+          echo "@perfectline-io:registry=https://npm.pkg.github.com" > ~/.npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
