@@ -13,6 +13,26 @@ export async function discoverServices(root: string): Promise<ServiceEntry[]> {
   }
 
   const services: ServiceEntry[] = []
+
+  // Check if root itself is a service (running from inside a service directory)
+  const rootPkgPath = join(root, 'package.json')
+  if (await fileExists(rootPkgPath)) {
+    try {
+      const pkg = JSON.parse(await readFile(rootPkgPath, 'utf8'))
+      const type = await detectServiceType(root, pkg)
+      if (type && type !== 'library') {
+        services.push({
+          name: pkg.name || basename(root),
+          path: root,
+          type,
+        })
+        return services
+      }
+    } catch {
+      // Fall through to recursive discovery
+    }
+  }
+
   await walkForPackages(root, root, 0, 3, services)
   return services
 }
