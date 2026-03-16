@@ -1,8 +1,10 @@
 {
   "name": "@perfectline-io/testing",
   "version": "0.2.9",
+  "description": "Testing infrastructure for Bun + Next.js projects — Jest/Playwright config factories, health checks, and CI actions",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
   },
   "files": [
     "dist/",
@@ -29,9 +31,10 @@
     "./health": "./dist/health/index.js",
     "./health/collectors": "./dist/health/collectors/index.js"
   },
+  "sideEffects": false,
   "peerDependencies": {
     "@testing-library/jest-dom": ">=6.0.0",
-    "next": "^16.1.6"
+    "next": ">=14.0.0"
   },
   "peerDependenciesMeta": {
     "@testing-library/jest-dom": {
